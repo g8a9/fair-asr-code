@@ -1,0 +1,7 @@
+librosa
+huggingface_hub
+datasets
+transformers
+fire
+tqdm
+codecarbon
