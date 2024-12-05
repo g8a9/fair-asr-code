@@ -300,9 +300,6 @@ def transcribe(
     out_file = os.path.join(
         output_dir, dataset_id, lang, f"{split}_{model_name_sanizited}.jsonl"
     )
-    import pdb
-
-    pdb.set_trace()
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
     results = pd.DataFrame(result).set_index("rid")
     results.to_json(out_file, orient="records", lines=True, force_ascii=False)
