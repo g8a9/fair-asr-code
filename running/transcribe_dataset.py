@@ -14,6 +14,7 @@ import torch
 import torch.multiprocessing
 from datasets import Dataset, load_dataset
 from tqdm import tqdm
+from utils import log_arguments
 
 # from fleurs import LANG_TO_CONFIG_MAPPING
 from datasets import Audio
@@ -30,18 +31,6 @@ logging.basicConfig(
     handlers=[logging.FileHandler("transcription.log"), logging.StreamHandler()],
 )
 logger = logging.getLogger(__name__)
-
-
-def log_arguments(func):
-    def wrapper(*args, **kwargs):
-        logger.info(f"Calling function '{func.__name__}' with arguments:")
-        for i, arg in enumerate(args):
-            logger.info(f"arg[{i}]: {arg}")
-        for key, value in kwargs.items():
-            logger.info(f"{key}: {value}")
-        return func(*args, **kwargs)
-
-    return wrapper
 
 
 # @track_emissions
@@ -67,7 +56,7 @@ def transcribe(
     max_length_seconds: int = 30,
 ):
 
-    if dataset_id == "cv":
+    if dataset_id == "cv_17":
         logger.info("Starting to load and decode local audio files.")
         split_file = f"{input_dir}/transcript/{lang}/{split}.tsv"
         df = pd.read_csv(split_file, sep="\t", quoting=csv.QUOTE_NONE, encoding="utf-8")

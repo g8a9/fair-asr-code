@@ -5,3 +5,6 @@ transformers
 fire
 tqdm
 codecarbon
+jiwer
+cyrtranslit
+more-itertools
