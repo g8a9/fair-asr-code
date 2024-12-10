@@ -142,6 +142,12 @@ def sample_and_compute_metrics(
     }
 
 
+def create_output_folders(output_dir):
+    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(f"{output_dir}/empty_stats", exist_ok=True)
+    os.makedirs(f"{output_dir}/samples", exist_ok=True)
+
+
 @log_arguments
 def main(
     lang,
@@ -152,6 +158,7 @@ def main(
     target_col: str,
     minority_group: str,
     majority_group: str,
+    do_sampling: bool = True,
     apply_sampling_minority: bool = False,
     apply_sampling_majority: bool = False,
     split: str = "devtest",
@@ -162,7 +169,6 @@ def main(
     load_type: str = "local",
     reference_col: str = "sentence",
     overwrite_results: bool = False,
-    do_sampling: bool = True,
     fleurs_speaker_info_dir: str = None,
     skip_support_filter: bool = False,
 ):
@@ -171,8 +177,9 @@ def main(
     # 1. Load transcriptions from result file...
     dataset_id = dataset.replace("/", "--")
     model_id = model.replace("/", "--")
+    create_output_folders(output_dir)
 
-    output_file = f"{model_id}_{dataset_id}_{split}_{lang}_{target_col}_{majority_group}_{minority_group}.json"
+    output_file = f"results_{model_id}_{dataset_id}_{split}_{lang}_{target_col}_{majority_group}_{minority_group}.json"
     if os.path.exists(os.path.join(output_dir, output_file)) and not overwrite_results:
         logger.info(f"Output file {output_file} exists alread. Skipping...")
         return
@@ -186,94 +193,94 @@ def main(
         dfs.append(df)
     transcription_df = pd.concat(dfs)
 
-    return
+    # if target_col == "gender" and "fleurs" in dataset:
+    #     print(f"Processing FLEURS: mapping gender IDs with {ID_2_GENDER_MAP}")
+    #     transcription_df[target_col] = transcription_df[target_col].apply(
+    #         lambda x: ID_2_GENDER_MAP[x]
+    #     )
 
-    if target_col == "gender" and "fleurs" in dataset:
-        print(f"Processing FLEURS: mapping gender IDs with {ID_2_GENDER_MAP}")
-        transcription_df[target_col] = transcription_df[target_col].apply(
-            lambda x: ID_2_GENDER_MAP[x]
-        )
+    logger.info("Number of transcriptions found:", len(transcription_df))
 
-    print("Number of transcriptions found:", len(transcription_df))
-
-    print("Some transcriptions loaded")
-    pprint.pprint(transcription_df["transcription"].iloc[:5].tolist())
+    # print("Some transcriptions loaded")
+    logger.info(transcription_df["transcription"].iloc[:5].tolist())
     # pprint.pprint(transcription_df.head())
 
-    if "fleurs" in dataset:
-        print("Processing FLEURS: Loading the speaker id info we previously computed")
+    # if "fleurs" in dataset:
+    #     print("Processing FLEURS: Loading the speaker id info we previously computed")
 
-        fleurs_speaker_info = pd.read_csv(
-            f"{fleurs_speaker_info_dir}/speaker_info_{lang}.csv"
-        )
-        transcription_df["client_id"] = fleurs_speaker_info["client_id"].values
-        # for idx, (gender_from_tr, gender_from_si) in enumerate(
-        #     zip(transcription_df["gender"], fleurs_speaker_info["gender"])
-        # ):
-        #     if gender_from_tr != ID_2_GENDER_MAP[gender_from_si]:
-        #         print(idx, gender_from_tr, ID_2_GENDER_MAP[gender_from_si])
+    #     fleurs_speaker_info = pd.read_csv(
+    #         f"{fleurs_speaker_info_dir}/speaker_info_{lang}.csv"
+    #     )
+    #     transcription_df["client_id"] = fleurs_speaker_info["client_id"].values
+    #     # for idx, (gender_from_tr, gender_from_si) in enumerate(
+    #     #     zip(transcription_df["gender"], fleurs_speaker_info["gender"])
+    #     # ):
+    #     #     if gender_from_tr != ID_2_GENDER_MAP[gender_from_si]:
+    #     #         print(idx, gender_from_tr, ID_2_GENDER_MAP[gender_from_si])
 
-        for idx, row in transcription_df.iterrows():
-            if (row["client_id"].startswith("female") and row["gender"] == "male") or (
-                row["client_id"].startswith("male") and row["gender"] == "female"
-            ):
-                raise RuntimeError(
-                    f"(Precomputed) speaker ID and gender at {idx} do not match"
-                )
+    #     for idx, row in transcription_df.iterrows():
+    #         if (row["client_id"].startswith("female") and row["gender"] == "male") or (
+    #             row["client_id"].startswith("male") and row["gender"] == "female"
+    #         ):
+    #             raise RuntimeError(
+    #                 f"(Precomputed) speaker ID and gender at {idx} do not match"
+    #             )
 
-    if split != "all":
-        print(f"Split is {split}. Filtering out the rest.")
-        if split != "devtest":
-            transcription_df = transcription_df.loc[transcription_df["split"] == split]
-        else:
-            transcription_df = transcription_df.loc[
-                transcription_df["split"].isin(["validation", "test"])
-            ]
+    # if split != "all":
+    #     print(f"Split is {split}. Filtering out the rest.")
+    #     if split != "devtest":
+    #         transcription_df = transcription_df.loc[transcription_df["split"] == split]
+    #     else:
+    #         transcription_df = transcription_df.loc[
+    #             transcription_df["split"].isin(["validation", "test"])
+    #         ]
 
-    if not skip_support_filter:
-        # 3. Filter out empty recordings (VAD pipeline) We saw some issues with FLEURS es
-        support_file = f"{os.path.dirname(output_dir)}/dataset_statistics/support_{dataset_id}_all_{lang}.csv"
-        support_file = f"./results-interim-asr-performance-gap/dataset_statistics/support_{dataset_id}_all_{lang}.csv"
-        print(f"Loading support file from {support_file}")
-        support_df = pd.read_csv(support_file, index_col="rid")
+    ############
+    # VAD filter
+    ############
 
-        if split != "all":
-            if split != "devtest":
-                support_df = support_df.loc[support_df["split"] == split]
-            else:
-                support_df = support_df.loc[
-                    support_df["split"].isin(["validation", "test"])
-                ]
+    # if not skip_support_filter:
+    #     # 3. Filter out empty recordings (VAD pipeline) We saw some issues with FLEURS es
+    #     support_file = f"{os.path.dirname(output_dir)}/dataset_statistics/support_{dataset_id}_all_{lang}.csv"
+    #     support_file = f"./results-interim-asr-performance-gap/dataset_statistics/support_{dataset_id}_all_{lang}.csv"
+    #     print(f"Loading support file from {support_file}")
+    #     support_df = pd.read_csv(support_file, index_col="rid")
 
-        mask_records_with_audio = (support_df["support"] > 0).values
-        print(
-            "Number of transcriptions before filtering empty records:",
-            len(transcription_df),
-        )
-        print("SHAPES", transcription_df.shape, support_df.shape)
-        transcription_df = transcription_df.loc[mask_records_with_audio]
-        print(
-            "Number of transcriptions after filtering empty records:",
-            len(transcription_df),
-        )
+    #     if split != "all":
+    #         if split != "devtest":
+    #             support_df = support_df.loc[support_df["split"] == split]
+    #         else:
+    #             support_df = support_df.loc[
+    #                 support_df["split"].isin(["validation", "test"])
+    #             ]
+
+    #     mask_records_with_audio = (support_df["support"] > 0).values
+    #     print(
+    #         "Number of transcriptions before filtering empty records:",
+    #         len(transcription_df),
+    #     )
+    #     print("SHAPES", transcription_df.shape, support_df.shape)
+    #     transcription_df = transcription_df.loc[mask_records_with_audio]
+    #     print(
+    #         "Number of transcriptions after filtering empty records:",
+    #         len(transcription_df),
+    #     )
 
     # init stuff
     set_seed(42)
-    os.makedirs(output_dir, exist_ok=True)
 
     # 4. Some references might be empty due to issues in the original dataset. We filter them out, too.
     init_len = len(transcription_df)
     transcription_df = transcription_df.loc[~transcription_df["reference"].isna()]
     final_len = len(transcription_df)
-    print(f"Filtering out {final_len - init_len} samples with empty references")
+    logger.info(f"Filtering out {init_len - final_len} samples with empty references")
 
     # Let's also count how many empty transcriptions we have. But we do not filter them out.
     empty_transcriptions = len(
         transcription_df.loc[transcription_df["transcription"].isna()]
     )
-    print(
-        f"Empty transcriptions found:",
-        empty_transcriptions,
+    logger.info(
+        f"Empty transcriptions found: {empty_transcriptions}",
     )
     transcription_df["transcription"] = transcription_df["transcription"].fillna("")
 
@@ -287,9 +294,9 @@ def main(
     ) as fp:
         json.dump(empty_stats, fp, indent=2)
 
-    # bonus. if it's serbian or russian, transliterate everything into cyrillic
+    # If it's serbian or russian, transliterate everything into cyrillic script
     if lang == "sr" or lang == "ru":
-        print(f"Transliterating to cyrillic {lang}")
+        logger.info(f"Transliterating to cyrillic {lang}")
         transcription_df["transcription"] = transcription_df["transcription"].apply(
             lambda x: cyrtranslit.to_cyrillic(x, lang)
         )
@@ -297,20 +304,33 @@ def main(
             lambda x: cyrtranslit.to_cyrillic(x, lang)
         )
 
-    print("GENDER DISTRIBUTION IN THE DATA CONSIDERED")
-    print(transcription_df[target_col].value_counts())
+    logger.info("GENDER DISTRIBUTION IN THE DATA CONSIDERED")
+    logger.info(transcription_df[target_col].value_counts())
 
     # 5. separate majority (advantaged) and minority (disadvantaged) groups
     minority_df = transcription_df.loc[transcription_df[target_col] == minority_group]
-    print(f"Unique minority speakers count: {minority_df.client_id.unique().size}")
-    print(f"Some speaker ids: {minority_df.client_id.unique()[:5]}")
+    logger.info(
+        f"Unique minority speakers count: {minority_df.client_id.unique().size}"
+    )
+    logger.info(f"Some speaker ids: {minority_df.client_id.unique()[:5]}")
     majority_df = transcription_df.loc[transcription_df[target_col] == majority_group]
-    print(f"Unique majority speakers count: {majority_df.client_id.unique().size}")
-    print(f"Some speaker ids: {majority_df.client_id.unique()[:5]}")
+    logger.info(
+        f"Unique majority speakers count: {majority_df.client_id.unique().size}"
+    )
+    logger.info(f"Some speaker ids: {majority_df.client_id.unique()[:5]}")
 
     # 6. compute metrics on the whole split
     whisper_normalize_text = "whisper" in model
     results = dict()
+
+    results["model_id"] = model_id
+    results["dataset_id"] = dataset_id
+    results["lang"] = lang
+    results["split"] = split
+    results["minority_group"] = minority_group
+    results["majority_group"] = majority_group
+    results["target_col"] = target_col
+
     full_metrics = compute_metrics(transcription_df, lang, whisper_normalize_text)
     results |= add_prefix_to_keys(full_metrics, "presample")
 
@@ -327,7 +347,7 @@ def main(
         results["presample_min_cer"] - results["presample_maj_cer"]
     )
 
-    print(f"do_sampling set to {do_sampling}!")
+    logger.info(f"do_sampling set to {do_sampling}!")
 
     if do_sampling:
         # 6. select users based on SPU percentile
@@ -346,10 +366,10 @@ def main(
 
         minority_df = minority_df.loc[minority_df["client_id"].isin(mino_users)]
         majority_df = majority_df.loc[majority_df["client_id"].isin(majo_users)]
-        print(f"Selected {len(mino_users)} users from the minority group")
-        print(f"Selected {len(majo_users)} users from the majority group")
-        print(f"{len(minority_df)} records from minority users")
-        print(f"{len(majority_df)} records from majority users")
+        logger.info(f"Selected {len(mino_users)} users from the minority group")
+        logger.info(f"Selected {len(majo_users)} users from the majority group")
+        logger.info(f"{len(minority_df)} records from minority users")
+        logger.info(f"{len(majority_df)} records from majority users")
 
         minority_df, majority_df = map(add_frequency_weight, (minority_df, majority_df))
         min_count, maj_count = len(minority_df), len(majority_df)
@@ -361,14 +381,18 @@ def main(
         # overall_min = minority_df.sample(n=min(min_count, maj_count), weights="weight")
         overall_maj = majority_df
         overall_min = minority_df
-        print("Number of records after subsampling (majority):", len(overall_maj))
-        print("Number of records after subsampling (minority):", len(overall_min))
+        logger.info(
+            f"Number of records after subsampling (majority): {len(overall_maj)}"
+        )
+        logger.info(
+            f"Number of records after subsampling (minority): {len(overall_min)}"
+        )
 
         # Compute sentence-level metrics
         sample_df = pd.concat([overall_maj, overall_min])
-        wers = []
-        cers = []
-        for idx, row in sample_df.iterrows():
+        wers = list()
+        cers = list()
+        for _, row in sample_df.iterrows():
             wers.append(
                 compute_metrics_row(
                     "wer",
