@@ -9,6 +9,7 @@ DATASETS = ["cv_17"]
 MODEL2LANG_SUPPORT = {
     "openai/whisper-large-v3": CV_LANGS,
     "openai/whisper-large-v3-turbo": CV_LANGS,
+    "facebook/seamless-m4t-v2-large": CV_LANGS,
     # "nvidia/canary-1b": ["en", "de", "fr", "es"],
 }
 
@@ -34,7 +35,7 @@ for dataset in DATASETS:
                     "model": model,
                 }
 
-        output_file = f"{dataset}_{model_sanitized}_default.json"
+        output_file = f"config/{dataset}_{model_sanitized}_default.json"
 
         with open(output_file, "w") as fp:
             json.dump(info, fp, indent=2)

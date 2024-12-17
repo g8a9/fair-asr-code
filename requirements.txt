@@ -8,3 +8,7 @@ codecarbon
 jiwer
 cyrtranslit
 more-itertools
+tiktoken
+protobuf
+sentencepiece
+hf_transfer
