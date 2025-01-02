@@ -14,6 +14,7 @@ class BaseDatasetConfig(ABC):
 
 
 class CommonVoiceConfig(BaseDatasetConfig):
+    name = "Common Voice 17"
     dataset_id = "cv_17"
     splits = ["dev", "test"]
 
@@ -40,6 +41,7 @@ class CommonVoiceConfig(BaseDatasetConfig):
 
 
 class VoxPopuliConfig(BaseDatasetConfig):
+    name = "VoxPopuli"
     dataset_id = "facebook/voxpopuli"
     splits = ["validation", "test"]
 
