@@ -19,7 +19,6 @@ from typing import Union
 
 # from mozilla_cv import LANGS_TO_LOAD_REMOTE
 # from fleurs import ID_2_GENDER_MAP
-import pprint
 from normalizers import BasicTextNormalizer, EnglishTextNormalizer
 from joblib import Parallel, delayed
 import logging

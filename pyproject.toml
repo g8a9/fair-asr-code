@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fair_asr_code"
+authors = [
+    {name = "Giuseppe Attanasio", email = "giuseppeattanasio6@gmail.com"},
+]
+description = "Code to support the Fair ASR Leaderboard"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "librosa",
+    "huggingface_hub",
+    "datasets",
+    "transformers",
+    "fire",
+    "tqdm",
+    "codecarbon",
+    "jiwer",
+    "cyrtranslit",
+    "more-itertools",
+    "tiktoken",
+    "protobuf",
+    "sentencepiece",
+    "hf_transfer"
+]
+dynamic = ["version"]
+
+[tool.setuptools.dynamic]
+version = {attr = "fair_asr_code.__version__"}  # any module attribute compatible with ast.literal_eval
+
+[tool.setuptools]
+packages = ["fair_asr_code"]
