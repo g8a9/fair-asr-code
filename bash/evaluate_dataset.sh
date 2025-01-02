@@ -17,10 +17,10 @@ group_contrast="F-M"
 # Models
 MODELS=( \
     "nvidia/canary-1b" \
+    "openai/whisper-large-v3" \
+    "openai/whisper-large-v3-turbo" \
+    "facebook/seamless-m4t-v2-large" \
 )
-    # "openai/whisper-large-v3" \
-    # "openai/whisper-large-v3-turbo" \
-    # "facebook/seamless-m4t-v2-large" \
 
 for model in "${MODELS[@]}"; do
     

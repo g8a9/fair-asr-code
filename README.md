@@ -9,11 +9,26 @@ This repository contains code to extend the paper's results and populate a [livi
 
 ## Getting started 
 
-WIP
+Create a new python environment and install pytorch. For this step, use the installation method that best fits your hardware setup.
+Then, install the requirements listed in `requirements.txt`.
 
-## Contributing a new model
+Fundamentally, gender bias evaluation is divided into two main phases.
 
-WIP
+For each model-evaluation dataset pair, we
+
+1. Generate the transcript of each recording. We run everything on validation and test splits to avoid data contamination with training snippets.
+2. Compute a series of metrics separately by gender group and compare the performance across groups.
+
+## Transcript generation
+
+Run one of the bash runners under `./bash` with the name starting with `transcribe_`. "arrayjob" scripts can be scheduled via SLURM and through the arrayjob function for parallel execution. Remember to update the SLURM directives in the first lines if you use them. 
+
+Transcription runs are configured through JSON config files. Roughly, they specify the dataset location, model ID, language, and other relevant parameters.
+
+### Adding a new model
+
+To add a new model, generate a config file and use it for a new run. See `config/cv_17_openai--whisper-large-v3-turbo_default.json` for an example.
+If the model can be loaded via transformes's `AutoModelForSpeechSeq2Seq` or `AutoModelForCTC`, no changes are needed. Otherwise, you'll need to implement a custom transciber class. See `NeMoTranscriber` as an example.
 
 ## Cite as
 
