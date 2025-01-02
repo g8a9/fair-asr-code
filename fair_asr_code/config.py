@@ -17,6 +17,7 @@ class CommonVoiceConfig(BaseDatasetConfig):
     name = "Common Voice 17"
     dataset_id = "cv_17"
     splits = ["dev", "test"]
+    speaking_condition = "read"
 
     group_contrasts = {
         "F-M": {
@@ -44,6 +45,7 @@ class VoxPopuliConfig(BaseDatasetConfig):
     name = "VoxPopuli"
     dataset_id = "facebook/voxpopuli"
     splits = ["validation", "test"]
+    speaking_condition = "spontaneous"
 
     group_contrasts = {
         "F-M": {
