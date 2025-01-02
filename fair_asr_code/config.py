@@ -70,6 +70,8 @@ class VoxPopuliConfig(BaseDatasetConfig):
     ]
 
 
+ALL_DATASET_CONFIGS = [CommonVoiceConfig, VoxPopuliConfig]
+
 # List the largest set of languages that each model supports
 MODEL2LANG_SUPPORT = {
     "openai/whisper-large-v3": CommonVoiceConfig.langs,
