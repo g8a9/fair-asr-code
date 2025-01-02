@@ -22,7 +22,7 @@ from datasets import Audio
 # from codecarbon import track_emissions
 from codecarbon import EmissionsTracker
 
-from transcriber import SimpleTranscriber
+from transcriber import HfTranscriber, NeMoTranscriber
 
 # Set up logging
 logging.basicConfig(
@@ -40,8 +40,8 @@ def transcribe(
     lang: str,
     split: str,
     model_name_or_path: str,
-    input_dir: str,
     output_dir: str,
+    input_dir: str = None,
     # model: str,
     dry_run: bool = False,
     batch_size: int = 1,
@@ -54,6 +54,7 @@ def transcribe(
     gender_col: str = "gender",
     target_sr: int = 16_000,
     max_length_seconds: int = 30,
+    load_and_resample: bool = False,
 ):
 
     if dataset_id == "cv_17":
@@ -66,11 +67,6 @@ def transcribe(
         data = Dataset.from_pandas(df)
         logger.info(f"Created a HF dataset with {len(data)} samples.")
 
-        data = data.add_column("rid", [f"{split}_{i}" for i in range(len(data))])  # type: ignore
-        logger.info(
-            f"Added a unique id column to the dataset, initial_value: {data['rid'][0]}, final value: {data['rid'][-1]}"
-        )
-
         # Measure the sampling rate of the first audio in data
         first_audio_path = data["audio_path"][0]
         _, original_sr = librosa.load(first_audio_path, sr=None)
@@ -81,8 +77,27 @@ def transcribe(
                 f"Sampling rate of the audio files is not {target_sr}. Resampling is required."
             )
             load_and_resample = True
+
+        # Measure the sampling rate of the first audio in data
+        first_audio_path = data["audio_path"][0]
+        _, original_sr = librosa.load(first_audio_path, sr=None)
+        logger.info(f"Sampling rate of the first audio: {original_sr}")
+    elif dataset_id == "facebook/voxpopuli":
+        data = load_dataset(
+            dataset_id,
+            lang,
+            split=split,
+            num_proc=num_workers,
+            trust_remote_code=True,
+        )
+        data = data.cast_column("audio", Audio(sampling_rate=16000))
     else:
         raise ValueError("Unknown dataset")
+
+    data = data.add_column("rid", [f"{split}_{i}" for i in range(len(data))])  # type: ignore
+    logger.info(
+        f"Added a unique id column to the dataset, initial_value: {data['rid'][0]}, final value: {data['rid'][-1]}"
+    )
 
     # clean_model_name = model.replace("/", "--")
     # clean_dataset_name = dataset.replace("/", "--")
@@ -146,13 +161,16 @@ def transcribe(
     #####
     # Prepare the pipeline and model
     #####
-    transcriber = SimpleTranscriber(
-        model_name_or_path=model_name_or_path,
-        tgt_lang=lang,
-        torch_dtype=torch.bfloat16,
-        # chunk_length_s=30,
-        device="cuda",
-    )
+    if model_name_or_path == "nvidia/canary-1b":
+        transcriber = NeMoTranscriber("nvidia/canary-1b", lang)
+    else:
+        transcriber = HfTranscriber(
+            model_name_or_path=model_name_or_path,
+            tgt_lang=lang,
+            torch_dtype=torch.bfloat16,
+            # chunk_length_s=30,
+            device="cuda",
+        )
     logger.info("Transcriber loaded")
 
     def load_and_resample_to_khz(examples):
@@ -216,13 +234,19 @@ def transcribe(
         logger.debug(f"Transcribing a chuck of {len(raw_audio)} samples.")
         logger.debug("Some references", data[reference_col][:3])
 
-        transcriptions = transcriber(
-            raw_audio=raw_audio,
-            sampling_rate=target_sr,
-            batch_size=batch_size,
-            num_workers=num_workers,
-            max_length=max_length_seconds * target_sr,
-        )
+        targs = {
+            "raw_audio": raw_audio,
+            "batch_size": batch_size,
+            "show_progress_bar": True,
+        }
+        if not isinstance(transcriber, NeMoTranscriber):
+            targs |= {
+                "num_workers": num_workers,
+                "max_length": max_length_seconds * target_sr,
+                "sampling_rate": target_sr,
+            }
+
+        transcriptions = transcriber(**targs)
 
         try:
             # FLEURS has no speaker id
@@ -298,8 +322,8 @@ def main(
     dataset_id: str,
     config_file: str,
     config_id: int,
-    input_dir: str,
     output_dir: str,
+    input_dir: str = None,
     dry_run: bool = False,
     batch_size: int = 1,
     num_workers: int = 1,
@@ -307,6 +331,7 @@ def main(
     chunk_size: int = 3000,
     reference_col: str = "sentence",
     speaker_id_col: str = "client_id",
+    load_and_resample: bool = False,
 ):
     with open(config_file) as fp:
         configs = json.load(fp)
@@ -323,26 +348,27 @@ def main(
     model_sanitized = model.replace("/", "--")
     os.makedirs(os.path.join(output_dir, "emissions"), exist_ok=True)
 
-    with EmissionsTracker(
-        log_level="debug",
-        output_dir=os.path.join(output_dir, "emissions"),
-        output_file=f"{dataset}_{lang}_{split}_{model_sanitized}.csv",
-    ) as tracker:
-        transcribe(
-            dataset_id=dataset,
-            lang=lang,
-            split=split,
-            model_name_or_path=model,
-            input_dir=input_dir,
-            output_dir=output_dir,
-            dry_run=dry_run,
-            batch_size=batch_size,
-            num_workers=num_workers,
-            overwrite_output=overwrite_output,
-            chunk_size=chunk_size,
-            reference_col=reference_col,
-            speaker_id_col=speaker_id_col,
-        )
+    # with EmissionsTracker(
+    #     log_level="debug",
+    #     output_dir=os.path.join(output_dir, "emissions"),
+    #     output_file=f"{dataset}_{lang}_{split}_{model_sanitized}.csv",
+    # ) as tracker:
+    transcribe(
+        dataset_id=dataset,
+        lang=lang,
+        split=split,
+        model_name_or_path=model,
+        input_dir=input_dir,
+        output_dir=output_dir,
+        dry_run=dry_run,
+        batch_size=batch_size,
+        num_workers=num_workers,
+        overwrite_output=overwrite_output,
+        chunk_size=chunk_size,
+        reference_col=reference_col,
+        speaker_id_col=speaker_id_col,
+        load_and_resample=load_and_resample,
+    )
 
 
 if __name__ == "__main__":

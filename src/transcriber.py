@@ -10,6 +10,7 @@ from transformers import (
     AutoProcessor,
     pipeline,
 )
+from abc import ABC, abstractmethod
 
 # Set up logging
 logging.basicConfig(
@@ -214,7 +215,53 @@ class SimpleDataset(torch.utils.data.Dataset):
         return len(self.array_list)
 
 
-class SimpleTranscriber:
+class BaseTranscriber(ABC):
+    """
+    Base class for transcribers that convert raw audio input into text.
+
+    Methods
+    -------
+    __call__(raw_audio, sampling_rate, batch_size=1, num_workers=1, show_progress_bar=True, max_length=480000, **generation_kwargs)
+        Abstract method to be implemented by subclasses. Processes raw audio and returns transcriptions.
+
+    Parameters
+    ----------
+    raw_audio : List[Union[np.ndarray, List[float]]]
+        A list of raw audio data, where each item is either a numpy array or a list of floats representing audio samples.
+    sampling_rate : int
+        The sampling rate of the raw audio data.
+    batch_size : int, optional
+        The number of audio samples to process in a single batch (default is 1).
+    num_workers : int, optional
+        The number of worker threads to use for processing (default is 1).
+    show_progress_bar : bool, optional
+        Whether to display a progress bar during processing (default is True).
+    max_length : int, optional
+        The maximum length of audio samples to process (default is 480000).
+    **generation_kwargs
+        Additional keyword arguments for the transcription generation process.
+
+    Returns
+    -------
+    List[str]
+        A list of transcriptions corresponding to the input raw audio data.
+    """
+
+    @abstractmethod
+    def __call__(
+        self,
+        raw_audio: List[Union[np.ndarray, List[float]]],
+        sampling_rate: int,
+        batch_size: int,
+        num_workers: int,
+        show_progress_bar: bool,
+        max_length: int,
+        **generation_kwargs,
+    ) -> List[str]:
+        pass
+
+
+class HfTranscriber(BaseTranscriber):
     def __init__(
         self,
         model_name_or_path: str,
@@ -412,46 +459,99 @@ class SimpleTranscriber:
         return output
 
 
-class SimpleTranscriberPipeline:
-    def __init__(self, model_name_or_path: str, lang: str, **pipeline_kwargs):
-        self.lang = lang
-        self.model_name_or_path = model_name_or_path
+# class SimpleTranscriberPipeline:
+#     def __init__(self, model_name_or_path: str, lang: str, **pipeline_kwargs):
+#         self.lang = lang
+#         self.model_name_or_path = model_name_or_path
 
-        # https://huggingface.co/GeoffVdr/whisper-medium-nlcv11/discussions/1
-        self.pipe = pipeline(
-            task="automatic-speech-recognition",
-            model=model_name_or_path,
-            **pipeline_kwargs,
-        )
+#         # https://huggingface.co/GeoffVdr/whisper-medium-nlcv11/discussions/1
+#         self.pipe = pipeline(
+#             task="automatic-speech-recognition",
+#             model=model_name_or_path,
+#             **pipeline_kwargs,
+#         )
 
-        if "whisper" in model_name_or_path:
-            self.pipe.model.config.forced_decoder_ids = (
-                self.pipe.tokenizer.get_decoder_prompt_ids(
-                    language=lang, task="transcribe"
-                )
-            )
+#         if "whisper" in model_name_or_path:
+#             self.pipe.model.config.forced_decoder_ids = (
+#                 self.pipe.tokenizer.get_decoder_prompt_ids(
+#                     language=lang, task="transcribe"
+#                 )
+#             )
+
+#     def __call__(
+#         self,
+#         raw_audio,
+#         batch_size: int = 1,
+#         show_progress_bar: bool = True,
+#         **generation_kwargs,
+#     ):
+#         def iterate_data(dataset):
+#             for _, item in enumerate(dataset):
+#                 yield np.array(item)
+
+#         transcriptions = list()
+
+#         for out in tqdm(
+#             self.pipe(
+#                 iterate_data(raw_audio), batch_size=batch_size, **generation_kwargs
+#             ),
+#             desc="Batch",
+#             total=len(raw_audio),
+#             disable=(not show_progress_bar),
+#         ):
+#             transcriptions.append(out["text"])
+
+#         return transcriptions
+
+
+try:
+    from nemo.collections.asr.models import EncDecMultiTaskModel
+except ImportError as e:
+    logger.error(f"Failed to import EncDecMultiTaskModel: {e}")
+
+
+class NeMoTranscriber(BaseTranscriber):
+    """From https://huggingface.co/nvidia/canary-1b"""
+
+    def __init__(self, model_name_or_path: str, lang: str):
+        self.model = EncDecMultiTaskModel.from_pretrained(model_name_or_path)
+        self.src_lang = self.tgt_lang = lang
+        decode_cfg = self.model.cfg.decoding
+        decode_cfg.beam.beam_size = 1
+        self.model.change_decoding_strategy(decode_cfg)
 
     def __call__(
         self,
-        raw_audio,
+        raw_audio: List[Union[np.ndarray, List[float]]],
         batch_size: int = 1,
         show_progress_bar: bool = True,
+        sampling_rate: int = None,
+        num_workers: int = None,
+        max_length: int = None,
         **generation_kwargs,
     ):
-        def iterate_data(dataset):
-            for _, item in enumerate(dataset):
-                yield np.array(item)
+        if sampling_rate:
+            raise ValueError("sampling_rate is not supported by NeMoTranscriber")
+        if num_workers:
+            raise ValueError("num_workers is not supported by NeMoTranscriber")
+        if max_length:
+            raise ValueError("max_length is not supported by NeMoTranscriber")
+        if len(generation_kwargs):
+            raise ValueError(
+                f"generation_kwargs is not supported by NeMoTranscriber: {', '.join(generation_kwargs.keys())}"
+            )
 
         transcriptions = list()
-
-        for out in tqdm(
-            self.pipe(
-                iterate_data(raw_audio), batch_size=batch_size, **generation_kwargs
-            ),
-            desc="Batch",
-            total=len(raw_audio),
-            disable=(not show_progress_bar),
-        ):
-            transcriptions.append(out["text"])
+        for audio in tqdm(raw_audio, desc="Chunk", disable=not show_progress_bar):
+            t = self.model.transcribe(
+                audio=np.array(audio),
+                batch_size=batch_size,
+                task="asr",
+                source_lang=self.src_lang,  # es: Spanish, fr: French, de: German
+                target_lang=self.tgt_lang,  # should be same as "source_lang" for 'asr'
+                verbose=False,
+                pnc="yes",
+            )
+            transcriptions.extend(t)
 
         return transcriptions

@@ -7,6 +7,7 @@ import json
 import os
 import time
 
+from tqdm import tqdm
 import fire
 import jiwer
 import numpy as np
@@ -14,6 +15,7 @@ import pandas as pd
 import scipy
 from transformers import set_seed
 import cyrtranslit
+from typing import Union
 
 # from mozilla_cv import LANGS_TO_LOAD_REMOTE
 # from fleurs import ID_2_GENDER_MAP
@@ -21,11 +23,14 @@ import pprint
 from normalizers import BasicTextNormalizer, EnglishTextNormalizer
 from joblib import Parallel, delayed
 import logging
+
+from config import CommonVoiceConfig, VoxPopuliConfig, MODEL2LANG_SUPPORT
 from utils import log_arguments
+
 
 # Set up logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[logging.FileHandler("transcription.log"), logging.StreamHandler()],
 )
@@ -148,46 +153,48 @@ def create_output_folders(output_dir):
     os.makedirs(f"{output_dir}/samples", exist_ok=True)
 
 
-@log_arguments
-def main(
-    lang,
+def evaluate(
     transcription_dir: str,
+    lang: str,
     model: str,
-    dataset: str,
+    dataset_config: Union[CommonVoiceConfig, VoxPopuliConfig],
     output_dir: str,
-    target_col: str,
-    minority_group: str,
-    majority_group: str,
-    do_sampling: bool = True,
-    apply_sampling_minority: bool = False,
-    apply_sampling_majority: bool = False,
-    split: str = "devtest",
-    num_proc: int = 4,
-    minority_accept_percentile: float = 99,
-    n_iterations: int = 1000,
-    minority_perc_sampled: float = 0.4,
-    load_type: str = "local",
-    reference_col: str = "sentence",
-    overwrite_results: bool = False,
-    fleurs_speaker_info_dir: str = None,
-    skip_support_filter: bool = False,
+    group_contrast: str,
+    do_sampling: bool,
+    apply_sampling_minority,
+    apply_sampling_majority,
+    split,
+    num_proc,
+    minority_accept_percentile,
+    n_iterations,
+    minority_perc_sampled,
+    overwrite_results,
+    # fleurs_speaker_info_dir,
+    # skip_support_filter,
 ):
-    # is_local_cv_lang = "mozilla" in dataset and lang not in LANGS_TO_LOAD_REMOTE
-
-    # 1. Load transcriptions from result file...
-    dataset_id = dataset.replace("/", "--")
+    dataset_id = dataset_config.sanitized_id()
     model_id = model.replace("/", "--")
-    create_output_folders(output_dir)
+    create_output_folders(os.path.join(output_dir, dataset_id))
+
+    group_contrast_info = dataset_config.group_contrasts[group_contrast]
+    target_col = group_contrast_info["target_col"]
+    minority_group = group_contrast_info["minority_group"]
+    majority_group = group_contrast_info["majority_group"]
 
     output_file = f"results_{model_id}_{dataset_id}_{split}_{lang}_{target_col}_{majority_group}_{minority_group}.json"
-    if os.path.exists(os.path.join(output_dir, output_file)) and not overwrite_results:
+    if (
+        os.path.exists(os.path.join(output_dir, dataset_id, output_file))
+        and not overwrite_results
+    ):
         logger.info(f"Output file {output_file} exists alread. Skipping...")
         return
 
     dfs = list()
-    for s in ["dev", "test"]:
-        filename = f"{transcription_dir}/{lang}/{s}_{model_id}.jsonl"
-        df = pd.read_json(filename, lines=True)
+    for s in dataset_config.splits:
+        file_path = os.path.join(
+            transcription_dir, dataset_id, lang, f"{s}_{model_id}.jsonl"
+        )
+        df = pd.read_json(file_path, lines=True)
         logger.info(f"Loaded from split {s}, {len(df)} transcriptions")
         df["split"] = [s] * len(df)
         dfs.append(df)
@@ -199,11 +206,14 @@ def main(
     #         lambda x: ID_2_GENDER_MAP[x]
     #     )
 
-    logger.info("Number of transcriptions found:", len(transcription_df))
+    logger.info(f"Number of transcriptions found: {len(transcription_df)}")
 
-    # print("Some transcriptions loaded")
-    logger.info(transcription_df["transcription"].iloc[:5].tolist())
-    # pprint.pprint(transcription_df.head())
+    logger.debug("Some transcriptions loaded")
+    logger.debug(transcription_df["transcription"].iloc[:5].tolist())
+
+    ##########
+    ## Handle FLEURS specific stuff
+    ##########
 
     # if "fleurs" in dataset:
     #     print("Processing FLEURS: Loading the speaker id info we previously computed")
@@ -266,20 +276,20 @@ def main(
     #         len(transcription_df),
     #     )
 
-    # init stuff
-    set_seed(42)
-
-    # 4. Some references might be empty due to issues in the original dataset. We filter them out, too.
+    # Some references might be empty due to issues in the original dataset. We filter them out.
     init_len = len(transcription_df)
-    transcription_df = transcription_df.loc[~transcription_df["reference"].isna()]
+    is_full = lambda x: x != None and x != ""
+    transcription_df = transcription_df.loc[
+        transcription_df["reference"].apply(is_full)
+    ]
     final_len = len(transcription_df)
     logger.info(f"Filtering out {init_len - final_len} samples with empty references")
 
     # Let's also count how many empty transcriptions we have. But we do not filter them out.
     empty_transcriptions = len(
-        transcription_df.loc[transcription_df["transcription"].isna()]
+        transcription_df.loc[~transcription_df["transcription"].apply(is_full)]
     )
-    logger.info(
+    logger.debug(
         f"Empty transcriptions found: {empty_transcriptions}",
     )
     transcription_df["transcription"] = transcription_df["transcription"].fillna("")
@@ -289,12 +299,17 @@ def main(
         "transcription": empty_transcriptions,
     }
     with open(
-        f"{output_dir}/empty_stats/empty_stats_{model_id}_{dataset_id}_{split}_{lang}_{target_col}_{majority_group}_{minority_group}.json",
+        os.path.join(
+            output_dir,
+            dataset_id,
+            "empty_stats",
+            f"empty_stats_{model_id}_{dataset_id}_{split}_{lang}_{target_col}_{majority_group}_{minority_group}.json",
+        ),
         "w",
     ) as fp:
         json.dump(empty_stats, fp, indent=2)
 
-    # If it's serbian or russian, transliterate everything into cyrillic script
+    # If it's serbian or russian, transliterate everything into cyrillic
     if lang == "sr" or lang == "ru":
         logger.info(f"Transliterating to cyrillic {lang}")
         transcription_df["transcription"] = transcription_df["transcription"].apply(
@@ -307,20 +322,23 @@ def main(
     logger.info("GENDER DISTRIBUTION IN THE DATA CONSIDERED")
     logger.info(transcription_df[target_col].value_counts())
 
-    # 5. separate majority (advantaged) and minority (disadvantaged) groups
+    # Separate majority and minority groups
     minority_df = transcription_df.loc[transcription_df[target_col] == minority_group]
-    logger.info(
+    logger.debug(
         f"Unique minority speakers count: {minority_df.client_id.unique().size}"
     )
-    logger.info(f"Some speaker ids: {minority_df.client_id.unique()[:5]}")
+    logger.debug(f"Some speaker ids: {minority_df.client_id.unique()[:5]}")
     majority_df = transcription_df.loc[transcription_df[target_col] == majority_group]
-    logger.info(
+    logger.debug(
         f"Unique majority speakers count: {majority_df.client_id.unique().size}"
     )
-    logger.info(f"Some speaker ids: {majority_df.client_id.unique()[:5]}")
+    logger.debug(f"Some speaker ids: {majority_df.client_id.unique()[:5]}")
 
     # 6. compute metrics on the whole split
     whisper_normalize_text = "whisper" in model
+    logger.info(
+        f"Using the normalization strategy from Whisper's code: {whisper_normalize_text}"
+    )
     results = dict()
 
     results["model_id"] = model_id
@@ -330,6 +348,7 @@ def main(
     results["minority_group"] = minority_group
     results["majority_group"] = majority_group
     results["target_col"] = target_col
+    results["eval_metric"] = "cer" if lang in ["yo", "ja"] else "wer"
 
     full_metrics = compute_metrics(transcription_df, lang, whisper_normalize_text)
     results |= add_prefix_to_keys(full_metrics, "presample")
@@ -350,14 +369,17 @@ def main(
     logger.info(f"do_sampling set to {do_sampling}!")
 
     if do_sampling:
-        # 6. select users based on SPU percentile
+        logger.info(f"Enabling bootstrap sampling for {n_iterations} iterations")
+
         if apply_sampling_minority:
+            logger.info("Applying sampling to the minority group")
             mino_users = find_users_below_percentile(
                 minority_df, minority_accept_percentile
             )
         else:
             mino_users = minority_df["client_id"].unique()
         if apply_sampling_majority:
+            logger.info("Applying sampling to the majority group")
             majo_users = find_users_below_percentile(
                 majority_df, minority_accept_percentile
             )
@@ -366,25 +388,25 @@ def main(
 
         minority_df = minority_df.loc[minority_df["client_id"].isin(mino_users)]
         majority_df = majority_df.loc[majority_df["client_id"].isin(majo_users)]
-        logger.info(f"Selected {len(mino_users)} users from the minority group")
-        logger.info(f"Selected {len(majo_users)} users from the majority group")
-        logger.info(f"{len(minority_df)} records from minority users")
-        logger.info(f"{len(majority_df)} records from majority users")
+        logger.debug(f"Selected {len(mino_users)} users from the minority group")
+        logger.debug(f"Selected {len(majo_users)} users from the majority group")
+        logger.debug(f"{len(minority_df)} records from minority users")
+        logger.debug(f"{len(majority_df)} records from majority users")
 
         minority_df, majority_df = map(add_frequency_weight, (minority_df, majority_df))
         min_count, maj_count = len(minority_df), len(majority_df)
 
         results["largest_group"] = "minority" if min_count > maj_count else "majority"
 
-        # sample the same number of samples from both groups
+        # We do not subsample any group (see details in the paper)
         # overall_maj = majority_df.sample(n=min(min_count, maj_count), weights="weight")
         # overall_min = minority_df.sample(n=min(min_count, maj_count), weights="weight")
         overall_maj = majority_df
         overall_min = minority_df
-        logger.info(
+        logger.debug(
             f"Number of records after subsampling (majority): {len(overall_maj)}"
         )
-        logger.info(
+        logger.debug(
             f"Number of records after subsampling (minority): {len(overall_min)}"
         )
 
@@ -415,7 +437,12 @@ def main(
         sample_df["cer"] = cers
 
         sample_df.to_csv(
-            f"{output_dir}/samples/sample_{model_id}_{dataset_id}_{split}_{lang}_{target_col}_{majority_group}_{minority_group}.csv"
+            os.path.join(
+                output_dir,
+                dataset_id,
+                "samples",
+                f"sample_{model_id}_{dataset_id}_{split}_{lang}_{target_col}_{majority_group}_{minority_group}.csv",
+            )
         )
         results |= add_prefix_to_keys(
             compute_metrics(
@@ -451,18 +478,31 @@ def main(
         )
 
         stats = pd.DataFrame(samples)  # type: ignore
-
         mean_stats = stats.mean()
-        std_stats = stats.std()
 
+        # Average results across all samples, separately by group
         results["mean_maj_wer"] = mean_stats["maj_wer"]
         results["mean_min_wer"] = mean_stats["min_wer"]
-        results["mean_diff_wer"] = mean_stats["min_wer"] - mean_stats["maj_wer"]
         results["mean_maj_cer"] = mean_stats["maj_cer"]
         results["mean_min_cer"] = mean_stats["min_cer"]
-        results["mean_diff_cer"] = mean_stats["min_cer"] - mean_stats["maj_cer"]
 
-        # stats on the subsample
+        def aggregate_sample_statistics(metric: str):
+            diff_ = stats[f"min_{metric}"] - stats[f"maj_{metric}"]
+            diff_rel_ = stats[f"min_{metric}"] / stats[f"maj_{metric}"] - 1
+            return {
+                f"{metric}_diff_mean": diff_.mean(),
+                f"{metric}_diff_std": diff_.std(),
+                f"{metric}_diff_rel_mean": diff_rel_.mean(),
+                f"{metric}_diff_rel_std": diff_rel_.std(),
+            }
+
+        results |= aggregate_sample_statistics("wer")
+        results |= aggregate_sample_statistics("cer")
+
+        # results["mean_diff_wer"] = mean_stats["min_wer"] - mean_stats["maj_wer"]
+        # results["mean_diff_cer"] = mean_stats["min_cer"] - mean_stats["maj_cer"]
+
+        # Statistics on the entire subsample
         results["subsample_size"] = samples[0]["subsample_size"]
         results["mean_subsample_wer"] = mean_stats["subsample_wer"]
         results["mean_subsample_cer"] = mean_stats["subsample_cer"]
@@ -488,10 +528,10 @@ def main(
 
         # info stats
         results["minority_accept_percentile"] = minority_accept_percentile
-        results["n_iterations"] = 1000
-        results["minority_perc_sampled"] = 0.4
+        results["n_iterations"] = n_iterations
+        results["minority_perc_sampled"] = minority_perc_sampled
 
-    with open(f"{output_dir}/{output_file}", "w") as fp:
+    with open(os.path.join(output_dir, dataset_id, output_file), "w") as fp:
         json.dump(results, fp, indent=2)
 
     # print("#### BASIC STATISTICS")
@@ -507,6 +547,58 @@ def main(
     # print("Confidence level (95%) of the difference in population means")
     # ci = ttest_res.confidence_interval()
     # print("Low", ci.low, "High", ci.high)
+
+
+@log_arguments
+def main(
+    transcription_dir: str,
+    model: str,
+    dataset: str,
+    output_dir: str,
+    group_contrast: str,
+    do_sampling: bool = True,
+    apply_sampling_minority: bool = False,
+    apply_sampling_majority: bool = False,
+    split: str = "devtest",
+    num_proc: int = 2,
+    minority_accept_percentile: float = 99,
+    n_iterations: int = 1500,
+    minority_perc_sampled: float = 0.4,
+    # load_type: str = "local",
+    # reference_col: str = "sentence",
+    overwrite_results: bool = False,
+    fleurs_speaker_info_dir: str = None,
+    skip_support_filter: bool = False,
+):
+    set_seed(42)
+
+    lang_supported_model = set(MODEL2LANG_SUPPORT[model])
+    dataset_config = CommonVoiceConfig if "cv" in dataset else VoxPopuliConfig
+    lang_supported_dataset = set(dataset_config.langs)
+
+    lang_to_eval = lang_supported_model.intersection(lang_supported_dataset)
+    logger.info(f"Languages to evaluate: {lang_to_eval}")
+
+    for lang in tqdm(lang_to_eval, desc="Language"):
+        evaluate(
+            transcription_dir=transcription_dir,
+            lang=lang,
+            model=model,
+            dataset_config=dataset_config,
+            output_dir=output_dir,
+            group_contrast=group_contrast,
+            do_sampling=do_sampling,
+            apply_sampling_minority=apply_sampling_minority,
+            apply_sampling_majority=apply_sampling_majority,
+            split=split,
+            num_proc=num_proc,
+            minority_accept_percentile=minority_accept_percentile,
+            n_iterations=n_iterations,
+            minority_perc_sampled=minority_perc_sampled,
+            overwrite_results=overwrite_results,
+            # fleurs_speaker_info_dir=fleurs_speaker_info_dir,
+            # skip_support_filter=skip_support_filter,
+        )
 
 
 if __name__ == "__main__":

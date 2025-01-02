@@ -1,0 +1,42 @@
+{
+  "0": {
+    "lang": "fr",
+    "split": "validation",
+    "model": "nvidia/canary-1b"
+  },
+  "1": {
+    "lang": "fr",
+    "split": "test",
+    "model": "nvidia/canary-1b"
+  },
+  "2": {
+    "lang": "en",
+    "split": "validation",
+    "model": "nvidia/canary-1b"
+  },
+  "3": {
+    "lang": "en",
+    "split": "test",
+    "model": "nvidia/canary-1b"
+  },
+  "4": {
+    "lang": "es",
+    "split": "validation",
+    "model": "nvidia/canary-1b"
+  },
+  "5": {
+    "lang": "es",
+    "split": "test",
+    "model": "nvidia/canary-1b"
+  },
+  "6": {
+    "lang": "de",
+    "split": "validation",
+    "model": "nvidia/canary-1b"
+  },
+  "7": {
+    "lang": "de",
+    "split": "test",
+    "model": "nvidia/canary-1b"
+  }
+}
