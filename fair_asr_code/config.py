@@ -76,6 +76,7 @@ ALL_DATASET_CONFIGS = [CommonVoiceConfig, VoxPopuliConfig]
 MODEL2LANG_SUPPORT = {
     "openai/whisper-large-v3": CommonVoiceConfig.langs,
     "openai/whisper-large-v3-turbo": CommonVoiceConfig.langs,
+    "distil-whisper/distil-large-v3": CommonVoiceConfig.langs,
     "facebook/seamless-m4t-v2-large": CommonVoiceConfig.langs,
     "nvidia/canary-1b": ["en", "de", "fr", "es"],
 }

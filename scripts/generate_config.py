@@ -1,6 +1,7 @@
 from itertools import product
 import json
-from dataset import CommonVoiceConfig, VoxPopuliConfig
+from fair_asr_code.config import MODEL2LANG_SUPPORT, CommonVoiceConfig, VoxPopuliConfig
+
 
 DATASET_CONFIGS = [CommonVoiceConfig, VoxPopuliConfig]
 

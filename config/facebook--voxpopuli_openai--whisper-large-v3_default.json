@@ -10,62 +10,62 @@
     "model": "openai/whisper-large-v3"
   },
   "2": {
-    "lang": "fi",
+    "lang": "es",
     "split": "validation",
     "model": "openai/whisper-large-v3"
   },
   "3": {
-    "lang": "fi",
+    "lang": "es",
     "split": "test",
     "model": "openai/whisper-large-v3"
   },
   "4": {
-    "lang": "sk",
+    "lang": "nl",
     "split": "validation",
     "model": "openai/whisper-large-v3"
   },
   "5": {
-    "lang": "sk",
+    "lang": "nl",
     "split": "test",
     "model": "openai/whisper-large-v3"
   },
   "6": {
-    "lang": "cs",
+    "lang": "ro",
     "split": "validation",
     "model": "openai/whisper-large-v3"
   },
   "7": {
-    "lang": "cs",
+    "lang": "ro",
     "split": "test",
     "model": "openai/whisper-large-v3"
   },
   "8": {
-    "lang": "ro",
+    "lang": "sk",
     "split": "validation",
     "model": "openai/whisper-large-v3"
   },
   "9": {
-    "lang": "ro",
+    "lang": "sk",
     "split": "test",
     "model": "openai/whisper-large-v3"
   },
   "10": {
-    "lang": "it",
+    "lang": "fr",
     "split": "validation",
     "model": "openai/whisper-large-v3"
   },
   "11": {
-    "lang": "it",
+    "lang": "fr",
     "split": "test",
     "model": "openai/whisper-large-v3"
   },
   "12": {
-    "lang": "fr",
+    "lang": "it",
     "split": "validation",
     "model": "openai/whisper-large-v3"
   },
   "13": {
-    "lang": "fr",
+    "lang": "it",
     "split": "test",
     "model": "openai/whisper-large-v3"
   },
@@ -80,32 +80,32 @@
     "model": "openai/whisper-large-v3"
   },
   "16": {
-    "lang": "es",
+    "lang": "cs",
     "split": "validation",
     "model": "openai/whisper-large-v3"
   },
   "17": {
-    "lang": "es",
+    "lang": "cs",
     "split": "test",
     "model": "openai/whisper-large-v3"
   },
   "18": {
-    "lang": "de",
+    "lang": "fi",
     "split": "validation",
     "model": "openai/whisper-large-v3"
   },
   "19": {
-    "lang": "de",
+    "lang": "fi",
     "split": "test",
     "model": "openai/whisper-large-v3"
   },
   "20": {
-    "lang": "nl",
+    "lang": "de",
     "split": "validation",
     "model": "openai/whisper-large-v3"
   },
   "21": {
-    "lang": "nl",
+    "lang": "de",
     "split": "test",
     "model": "openai/whisper-large-v3"
   }

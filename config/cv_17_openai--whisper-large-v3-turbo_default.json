@@ -1,191 +1,191 @@
 {
   "0": {
-    "lang": "sk",
+    "lang": "sw",
     "split": "dev",
     "model": "openai/whisper-large-v3-turbo"
   },
   "1": {
-    "lang": "sk",
+    "lang": "sw",
     "split": "test",
     "model": "openai/whisper-large-v3-turbo"
   },
   "2": {
-    "lang": "ro",
+    "lang": "ja",
     "split": "dev",
     "model": "openai/whisper-large-v3-turbo"
   },
   "3": {
-    "lang": "ro",
+    "lang": "ja",
     "split": "test",
     "model": "openai/whisper-large-v3-turbo"
   },
   "4": {
-    "lang": "ru",
+    "lang": "fi",
     "split": "dev",
     "model": "openai/whisper-large-v3-turbo"
   },
   "5": {
-    "lang": "ru",
+    "lang": "fi",
     "split": "test",
     "model": "openai/whisper-large-v3-turbo"
   },
   "6": {
-    "lang": "sr",
+    "lang": "ru",
     "split": "dev",
     "model": "openai/whisper-large-v3-turbo"
   },
   "7": {
-    "lang": "sr",
+    "lang": "ru",
     "split": "test",
     "model": "openai/whisper-large-v3-turbo"
   },
   "8": {
-    "lang": "sw",
+    "lang": "hu",
     "split": "dev",
     "model": "openai/whisper-large-v3-turbo"
   },
   "9": {
-    "lang": "sw",
+    "lang": "hu",
     "split": "test",
     "model": "openai/whisper-large-v3-turbo"
   },
   "10": {
-    "lang": "fr",
+    "lang": "pt",
     "split": "dev",
     "model": "openai/whisper-large-v3-turbo"
   },
   "11": {
-    "lang": "fr",
+    "lang": "pt",
     "split": "test",
     "model": "openai/whisper-large-v3-turbo"
   },
   "12": {
-    "lang": "yo",
+    "lang": "nl",
     "split": "dev",
     "model": "openai/whisper-large-v3-turbo"
   },
   "13": {
-    "lang": "yo",
+    "lang": "nl",
     "split": "test",
     "model": "openai/whisper-large-v3-turbo"
   },
   "14": {
-    "lang": "ar",
+    "lang": "ro",
     "split": "dev",
     "model": "openai/whisper-large-v3-turbo"
   },
   "15": {
-    "lang": "ar",
+    "lang": "ro",
     "split": "test",
     "model": "openai/whisper-large-v3-turbo"
   },
   "16": {
-    "lang": "en",
+    "lang": "ar",
     "split": "dev",
     "model": "openai/whisper-large-v3-turbo"
   },
   "17": {
-    "lang": "en",
+    "lang": "ar",
     "split": "test",
     "model": "openai/whisper-large-v3-turbo"
   },
   "18": {
-    "lang": "fi",
+    "lang": "cs",
     "split": "dev",
     "model": "openai/whisper-large-v3-turbo"
   },
   "19": {
-    "lang": "fi",
+    "lang": "cs",
     "split": "test",
     "model": "openai/whisper-large-v3-turbo"
   },
   "20": {
-    "lang": "hu",
+    "lang": "es",
     "split": "dev",
     "model": "openai/whisper-large-v3-turbo"
   },
   "21": {
-    "lang": "hu",
+    "lang": "es",
     "split": "test",
     "model": "openai/whisper-large-v3-turbo"
   },
   "22": {
-    "lang": "pt",
+    "lang": "sk",
     "split": "dev",
     "model": "openai/whisper-large-v3-turbo"
   },
   "23": {
-    "lang": "pt",
+    "lang": "sk",
     "split": "test",
     "model": "openai/whisper-large-v3-turbo"
   },
   "24": {
-    "lang": "cs",
+    "lang": "en",
     "split": "dev",
     "model": "openai/whisper-large-v3-turbo"
   },
   "25": {
-    "lang": "cs",
+    "lang": "en",
     "split": "test",
     "model": "openai/whisper-large-v3-turbo"
   },
   "26": {
-    "lang": "de",
+    "lang": "ca",
     "split": "dev",
     "model": "openai/whisper-large-v3-turbo"
   },
   "27": {
-    "lang": "de",
+    "lang": "ca",
     "split": "test",
     "model": "openai/whisper-large-v3-turbo"
   },
   "28": {
-    "lang": "nl",
+    "lang": "de",
     "split": "dev",
     "model": "openai/whisper-large-v3-turbo"
   },
   "29": {
-    "lang": "nl",
+    "lang": "de",
     "split": "test",
     "model": "openai/whisper-large-v3-turbo"
   },
   "30": {
-    "lang": "it",
+    "lang": "sr",
     "split": "dev",
     "model": "openai/whisper-large-v3-turbo"
   },
   "31": {
-    "lang": "it",
+    "lang": "sr",
     "split": "test",
     "model": "openai/whisper-large-v3-turbo"
   },
   "32": {
-    "lang": "ja",
+    "lang": "fr",
     "split": "dev",
     "model": "openai/whisper-large-v3-turbo"
   },
   "33": {
-    "lang": "ja",
+    "lang": "fr",
     "split": "test",
     "model": "openai/whisper-large-v3-turbo"
   },
   "34": {
-    "lang": "ca",
+    "lang": "it",
     "split": "dev",
     "model": "openai/whisper-large-v3-turbo"
   },
   "35": {
-    "lang": "ca",
+    "lang": "it",
     "split": "test",
     "model": "openai/whisper-large-v3-turbo"
   },
   "36": {
-    "lang": "es",
+    "lang": "yo",
     "split": "dev",
     "model": "openai/whisper-large-v3-turbo"
   },
   "37": {
-    "lang": "es",
+    "lang": "yo",
     "split": "test",
     "model": "openai/whisper-large-v3-turbo"
   }
