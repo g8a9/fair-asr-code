@@ -9,9 +9,10 @@ if [ -z "$1" ]; then
     exit 1
 fi
 dataset=$1
+
+# Main configs
 input_dir="/mnt/home/giuseppe/myscratch/fair-asr-results/transcripts/"
 output_dir="/mnt/home/giuseppe/myscratch/fair-asr-results/evaluation/"
-# Main configs
 group_contrast="F-M"
 
 # Models
@@ -20,11 +21,12 @@ MODELS=( \
     "openai/whisper-large-v3" \
     "openai/whisper-large-v3-turbo" \
     "facebook/seamless-m4t-v2-large" \
+    "distil-whisper/distil-large-v3" \
 )
 
 for model in "${MODELS[@]}"; do
     
-    python src/evaluate.py \
+    python fair_asr_code/evaluate.py \
         --transcription_dir $input_dir \
         --model $model \
         --dataset $dataset \
