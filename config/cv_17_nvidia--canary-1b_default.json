@@ -1,21 +1,21 @@
 {
   "0": {
-    "lang": "es",
+    "lang": "fr",
     "split": "dev",
     "model": "nvidia/canary-1b"
   },
   "1": {
-    "lang": "es",
+    "lang": "fr",
     "split": "test",
     "model": "nvidia/canary-1b"
   },
   "2": {
-    "lang": "fr",
+    "lang": "es",
     "split": "dev",
     "model": "nvidia/canary-1b"
   },
   "3": {
-    "lang": "fr",
+    "lang": "es",
     "split": "test",
     "model": "nvidia/canary-1b"
   },

@@ -10,102 +10,102 @@
     "model": "facebook/seamless-m4t-v2-large"
   },
   "2": {
-    "lang": "es",
+    "lang": "sk",
     "split": "validation",
     "model": "facebook/seamless-m4t-v2-large"
   },
   "3": {
-    "lang": "es",
+    "lang": "sk",
     "split": "test",
     "model": "facebook/seamless-m4t-v2-large"
   },
   "4": {
-    "lang": "nl",
+    "lang": "fr",
     "split": "validation",
     "model": "facebook/seamless-m4t-v2-large"
   },
   "5": {
-    "lang": "nl",
+    "lang": "fr",
     "split": "test",
     "model": "facebook/seamless-m4t-v2-large"
   },
   "6": {
-    "lang": "ro",
+    "lang": "it",
     "split": "validation",
     "model": "facebook/seamless-m4t-v2-large"
   },
   "7": {
-    "lang": "ro",
+    "lang": "it",
     "split": "test",
     "model": "facebook/seamless-m4t-v2-large"
   },
   "8": {
-    "lang": "sk",
+    "lang": "fi",
     "split": "validation",
     "model": "facebook/seamless-m4t-v2-large"
   },
   "9": {
-    "lang": "sk",
+    "lang": "fi",
     "split": "test",
     "model": "facebook/seamless-m4t-v2-large"
   },
   "10": {
-    "lang": "fr",
+    "lang": "ro",
     "split": "validation",
     "model": "facebook/seamless-m4t-v2-large"
   },
   "11": {
-    "lang": "fr",
+    "lang": "ro",
     "split": "test",
     "model": "facebook/seamless-m4t-v2-large"
   },
   "12": {
-    "lang": "it",
+    "lang": "en",
     "split": "validation",
     "model": "facebook/seamless-m4t-v2-large"
   },
   "13": {
-    "lang": "it",
+    "lang": "en",
     "split": "test",
     "model": "facebook/seamless-m4t-v2-large"
   },
   "14": {
-    "lang": "en",
+    "lang": "nl",
     "split": "validation",
     "model": "facebook/seamless-m4t-v2-large"
   },
   "15": {
-    "lang": "en",
+    "lang": "nl",
     "split": "test",
     "model": "facebook/seamless-m4t-v2-large"
   },
   "16": {
-    "lang": "cs",
+    "lang": "es",
     "split": "validation",
     "model": "facebook/seamless-m4t-v2-large"
   },
   "17": {
-    "lang": "cs",
+    "lang": "es",
     "split": "test",
     "model": "facebook/seamless-m4t-v2-large"
   },
   "18": {
-    "lang": "fi",
+    "lang": "de",
     "split": "validation",
     "model": "facebook/seamless-m4t-v2-large"
   },
   "19": {
-    "lang": "fi",
+    "lang": "de",
     "split": "test",
     "model": "facebook/seamless-m4t-v2-large"
   },
   "20": {
-    "lang": "de",
+    "lang": "cs",
     "split": "validation",
     "model": "facebook/seamless-m4t-v2-large"
   },
   "21": {
-    "lang": "de",
+    "lang": "cs",
     "split": "test",
     "model": "facebook/seamless-m4t-v2-large"
   }

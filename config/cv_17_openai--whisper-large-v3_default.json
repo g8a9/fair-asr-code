@@ -10,102 +10,102 @@
     "model": "openai/whisper-large-v3"
   },
   "2": {
-    "lang": "ja",
+    "lang": "it",
     "split": "dev",
     "model": "openai/whisper-large-v3"
   },
   "3": {
-    "lang": "ja",
+    "lang": "it",
     "split": "test",
     "model": "openai/whisper-large-v3"
   },
   "4": {
-    "lang": "fi",
+    "lang": "ru",
     "split": "dev",
     "model": "openai/whisper-large-v3"
   },
   "5": {
-    "lang": "fi",
+    "lang": "ru",
     "split": "test",
     "model": "openai/whisper-large-v3"
   },
   "6": {
-    "lang": "ru",
+    "lang": "ca",
     "split": "dev",
     "model": "openai/whisper-large-v3"
   },
   "7": {
-    "lang": "ru",
+    "lang": "ca",
     "split": "test",
     "model": "openai/whisper-large-v3"
   },
   "8": {
-    "lang": "hu",
+    "lang": "pt",
     "split": "dev",
     "model": "openai/whisper-large-v3"
   },
   "9": {
-    "lang": "hu",
+    "lang": "pt",
     "split": "test",
     "model": "openai/whisper-large-v3"
   },
   "10": {
-    "lang": "pt",
+    "lang": "de",
     "split": "dev",
     "model": "openai/whisper-large-v3"
   },
   "11": {
-    "lang": "pt",
+    "lang": "de",
     "split": "test",
     "model": "openai/whisper-large-v3"
   },
   "12": {
-    "lang": "nl",
+    "lang": "es",
     "split": "dev",
     "model": "openai/whisper-large-v3"
   },
   "13": {
-    "lang": "nl",
+    "lang": "es",
     "split": "test",
     "model": "openai/whisper-large-v3"
   },
   "14": {
-    "lang": "ro",
+    "lang": "ar",
     "split": "dev",
     "model": "openai/whisper-large-v3"
   },
   "15": {
-    "lang": "ro",
+    "lang": "ar",
     "split": "test",
     "model": "openai/whisper-large-v3"
   },
   "16": {
-    "lang": "ar",
+    "lang": "nl",
     "split": "dev",
     "model": "openai/whisper-large-v3"
   },
   "17": {
-    "lang": "ar",
+    "lang": "nl",
     "split": "test",
     "model": "openai/whisper-large-v3"
   },
   "18": {
-    "lang": "cs",
+    "lang": "ro",
     "split": "dev",
     "model": "openai/whisper-large-v3"
   },
   "19": {
-    "lang": "cs",
+    "lang": "ro",
     "split": "test",
     "model": "openai/whisper-large-v3"
   },
   "20": {
-    "lang": "es",
+    "lang": "hu",
     "split": "dev",
     "model": "openai/whisper-large-v3"
   },
   "21": {
-    "lang": "es",
+    "lang": "hu",
     "split": "test",
     "model": "openai/whisper-large-v3"
   },
@@ -120,72 +120,72 @@
     "model": "openai/whisper-large-v3"
   },
   "24": {
-    "lang": "en",
+    "lang": "fr",
     "split": "dev",
     "model": "openai/whisper-large-v3"
   },
   "25": {
-    "lang": "en",
+    "lang": "fr",
     "split": "test",
     "model": "openai/whisper-large-v3"
   },
   "26": {
-    "lang": "ca",
+    "lang": "en",
     "split": "dev",
     "model": "openai/whisper-large-v3"
   },
   "27": {
-    "lang": "ca",
+    "lang": "en",
     "split": "test",
     "model": "openai/whisper-large-v3"
   },
   "28": {
-    "lang": "de",
+    "lang": "fi",
     "split": "dev",
     "model": "openai/whisper-large-v3"
   },
   "29": {
-    "lang": "de",
+    "lang": "fi",
     "split": "test",
     "model": "openai/whisper-large-v3"
   },
   "30": {
-    "lang": "sr",
+    "lang": "yo",
     "split": "dev",
     "model": "openai/whisper-large-v3"
   },
   "31": {
-    "lang": "sr",
+    "lang": "yo",
     "split": "test",
     "model": "openai/whisper-large-v3"
   },
   "32": {
-    "lang": "fr",
+    "lang": "ja",
     "split": "dev",
     "model": "openai/whisper-large-v3"
   },
   "33": {
-    "lang": "fr",
+    "lang": "ja",
     "split": "test",
     "model": "openai/whisper-large-v3"
   },
   "34": {
-    "lang": "it",
+    "lang": "sr",
     "split": "dev",
     "model": "openai/whisper-large-v3"
   },
   "35": {
-    "lang": "it",
+    "lang": "sr",
     "split": "test",
     "model": "openai/whisper-large-v3"
   },
   "36": {
-    "lang": "yo",
+    "lang": "cs",
     "split": "dev",
     "model": "openai/whisper-large-v3"
   },
   "37": {
-    "lang": "yo",
+    "lang": "cs",
     "split": "test",
     "model": "openai/whisper-large-v3"
   }

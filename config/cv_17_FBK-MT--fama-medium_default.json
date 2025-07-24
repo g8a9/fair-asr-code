@@ -1,0 +1,22 @@
+{
+  "0": {
+    "lang": "it",
+    "split": "dev",
+    "model": "FBK-MT/fama-medium"
+  },
+  "1": {
+    "lang": "it",
+    "split": "test",
+    "model": "FBK-MT/fama-medium"
+  },
+  "2": {
+    "lang": "en",
+    "split": "dev",
+    "model": "FBK-MT/fama-medium"
+  },
+  "3": {
+    "lang": "en",
+    "split": "test",
+    "model": "FBK-MT/fama-medium"
+  }
+}

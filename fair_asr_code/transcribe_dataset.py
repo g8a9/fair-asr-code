@@ -15,6 +15,7 @@ import torch.multiprocessing
 from datasets import Dataset, load_dataset
 from tqdm import tqdm
 from utils import log_arguments
+from transformers import AutoProcessor
 
 # from fleurs import LANG_TO_CONFIG_MAPPING
 from datasets import Audio
@@ -22,7 +23,14 @@ from datasets import Audio
 # from codecarbon import track_emissions
 from codecarbon import EmissionsTracker
 
-from transcriber import HfTranscriber, NeMoTranscriber
+from transcriber import HfTranscriber, HfPipelineTranscriber, NeMoTranscriber
+
+FAMA_MODELS = [
+    "FBK-MT/fama-medium-asr",
+    "FBK-MT/fama-small-asr",
+    "FBK-MT/fama-small",
+    "FBK-MT/fama-medium",
+]
 
 # Set up logging
 logging.basicConfig(
@@ -59,11 +67,9 @@ def transcribe(
 
     if dataset_id == "cv_17":
         logger.info("Starting to load and decode local audio files.")
-        split_file = f"{input_dir}/transcript/{lang}/{split}.tsv"
+        split_file = f"{input_dir}/{lang}/{split}.tsv"
         df = pd.read_csv(split_file, sep="\t", quoting=csv.QUOTE_NONE, encoding="utf-8")
-        df["audio_path"] = df["path"].apply(
-            lambda x: f"{input_dir}/audio/{lang}/{split}/{lang}_{split}_0/{x}"
-        )
+        df["audio_path"] = df["path"].apply(lambda x: f"{input_dir}/{lang}/clips/{x}")
         data = Dataset.from_pandas(df)
         logger.info(f"Created a HF dataset with {len(data)} samples.")
 
@@ -163,6 +169,24 @@ def transcribe(
     #####
     if model_name_or_path == "nvidia/canary-1b":
         transcriber = NeMoTranscriber("nvidia/canary-1b", lang)
+    elif model_name_or_path in FAMA_MODELS:
+        processor = AutoProcessor.from_pretrained(model_name_or_path)
+        lang_tag = "<lang:{}>".format(lang)
+        lang_tag_id = processor.tokenizer.convert_tokens_to_ids(lang_tag)
+
+        transcriber = HfPipelineTranscriber(
+            model_name_or_path=model_name_or_path,
+            tgt_lang=lang,
+            torch_dtype=torch.float32,
+            device="cuda",
+            trust_remote_code=True,
+            return_timestamps=False,
+            generate_kwargs={
+                "num_beams": 5,
+                "no_repeat_ngram_size": 5,
+                "forced_bos_token_id": lang_tag_id,
+            },
+        )
     else:
         transcriber = HfTranscriber(
             model_name_or_path=model_name_or_path,
@@ -239,7 +263,9 @@ def transcribe(
             "batch_size": batch_size,
             "show_progress_bar": True,
         }
-        if not isinstance(transcriber, NeMoTranscriber):
+        if not isinstance(transcriber, NeMoTranscriber) and not isinstance(
+            transcriber, HfPipelineTranscriber
+        ):
             targs |= {
                 "num_workers": num_workers,
                 "max_length": max_length_seconds * target_sr,

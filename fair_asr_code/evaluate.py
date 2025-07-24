@@ -205,8 +205,16 @@ def evaluate(
     #         lambda x: ID_2_GENDER_MAP[x]
     #     )
 
-    logger.info(f"Number of transcriptions found: {len(transcription_df)}")
+    # If it is a FAMA model, remove <lang:en> or <lang:it> tags
+    if "FBK-MT" in model:
+        transcription_df["transcription"] = transcription_df[
+            "transcription"
+        ].str.replace(r"<lang:[a-z]{2}>", "", regex=True)
+        transcription_df["transcription"] = transcription_df["transcription"].apply(
+            lambda x: x.strip()
+        )
 
+    logger.info(f"Number of transcriptions found: {len(transcription_df)}")
     logger.debug("Some transcriptions loaded")
     logger.debug(transcription_df["transcription"].iloc[:5].tolist())
 

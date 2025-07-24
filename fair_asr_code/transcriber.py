@@ -459,49 +459,56 @@ class HfTranscriber(BaseTranscriber):
         return output
 
 
-# class SimpleTranscriberPipeline:
-#     def __init__(self, model_name_or_path: str, lang: str, **pipeline_kwargs):
-#         self.lang = lang
-#         self.model_name_or_path = model_name_or_path
+class HfPipelineTranscriber(BaseTranscriber):
+    def __init__(
+        self,
+        model_name_or_path: str,
+        tgt_lang: str,
+        device: str = "cuda",
+        **pipeline_kwargs,
+    ):
+        self.tgt_lang = tgt_lang
+        self.model_name_or_path = model_name_or_path
 
-#         # https://huggingface.co/GeoffVdr/whisper-medium-nlcv11/discussions/1
-#         self.pipe = pipeline(
-#             task="automatic-speech-recognition",
-#             model=model_name_or_path,
-#             **pipeline_kwargs,
-#         )
+        # https://huggingface.co/GeoffVdr/whisper-medium-nlcv11/discussions/1
+        self.pipe = pipeline(
+            task="automatic-speech-recognition",
+            model=model_name_or_path,
+            device=device,
+            **pipeline_kwargs,
+        )
 
-#         if "whisper" in model_name_or_path:
-#             self.pipe.model.config.forced_decoder_ids = (
-#                 self.pipe.tokenizer.get_decoder_prompt_ids(
-#                     language=lang, task="transcribe"
-#                 )
-#             )
+        if "whisper" in model_name_or_path:
+            self.pipe.model.config.forced_decoder_ids = (
+                self.pipe.tokenizer.get_decoder_prompt_ids(
+                    language=tgt_lang, task="transcribe"
+                )
+            )
 
-#     def __call__(
-#         self,
-#         raw_audio,
-#         batch_size: int = 1,
-#         show_progress_bar: bool = True,
-#         **generation_kwargs,
-#     ):
-#         def iterate_data(dataset):
-#             for _, item in enumerate(dataset):
-#                 yield np.array(item)
+    def __call__(
+        self,
+        raw_audio,
+        batch_size: int = 1,
+        show_progress_bar: bool = True,
+        **generation_kwargs,
+    ):
+        def iterate_data(dataset):
+            for _, item in enumerate(dataset):
+                yield np.array(item)
 
-#         transcriptions = list()
+        transcriptions = list()
 
-#         for out in tqdm(
-#             self.pipe(
-#                 iterate_data(raw_audio), batch_size=batch_size, **generation_kwargs
-#             ),
-#             desc="Batch",
-#             total=len(raw_audio),
-#             disable=(not show_progress_bar),
-#         ):
-#             transcriptions.append(out["text"])
+        for out in tqdm(
+            self.pipe(
+                iterate_data(raw_audio), batch_size=batch_size, **generation_kwargs
+            ),
+            desc="Batch",
+            total=len(raw_audio),
+            disable=(not show_progress_bar),
+        ):
+            transcriptions.append(out["text"])
 
-#         return transcriptions
+        return transcriptions
 
 
 try:
