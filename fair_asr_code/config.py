@@ -79,4 +79,8 @@ MODEL2LANG_SUPPORT = {
     "distil-whisper/distil-large-v3": CommonVoiceConfig.langs,
     "facebook/seamless-m4t-v2-large": CommonVoiceConfig.langs,
     "nvidia/canary-1b": ["en", "de", "fr", "es"],
+    "FBK-MT/fama-small": ["en", "it"],
+    "FBK-MT/fama-medium": ["en", "it"],
+    "FBK-MT/fama-small-asr": ["en", "it"],
+    "FBK-MT/fama-medium-asr": ["en", "it"],
 }
